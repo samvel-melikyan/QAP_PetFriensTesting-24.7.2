@@ -2,10 +2,9 @@
 import json
 
 import requests
+from requests.exceptions import InvalidHeader
 from requests_toolbelt import MultipartEncoder
-
-
-# from requests.multipart.encoder import MultipartEncoder
+import secrets
 
 
 class PetFriends:
@@ -14,6 +13,8 @@ class PetFriends:
     def __init__(self):
         self.base_url = "https://petfriends.skillfactory.ru/"
 
+
+
     def get_api_key(self, email: str, passwd: str) -> json:
         """Метод делает запрос к API сервера и возвращает статус запроса и результат в формате
         JSON с уникальным ключем пользователя, найденного по указанным email и паролем"""
@@ -21,13 +22,18 @@ class PetFriends:
             'email': email,
             'password': passwd,
         }
-        res = requests.get(self.base_url + 'api/key', headers=headers)
-        status = res.status_code
-        result = ""
         try:
-            result = res.json()
-        except json.decoder.JSONDecodeError:
-            result = res.text
+            res = requests.get(self.base_url + 'api/key', headers=headers)
+            status = res.status_code
+            result = ""
+            try:
+                result = res.json()
+            except json.decoder.JSONDecodeError:
+                result = res.text
+        except InvalidHeader or UnboundLocalError:
+            status = 403
+            result = ""
+
         return status, result
 
     def get_list_of_pets(self, auth_key: json, filter: str = "") -> json:
@@ -57,14 +63,23 @@ class PetFriends:
                 'age': age,
                 'pet_photo': (pet_photo, open(pet_photo, 'rb'), 'image/jpeg')
             })
-        headers = {'auth_key': auth_key['key'], 'Content-Type': data.content_type}
-        res = requests.post(self.base_url + 'api/pets', headers=headers, data=data)
-        status = res.status_code
+        try:
+            headers = {'auth_key': auth_key['key'], 'Content-Type': data.content_type}
+        except TypeError:
+            headers = {'auth_key': auth_key, 'Content-Type': data.content_type}
+
         result = ""
         try:
-            result = res.json()
-        except json.decoder.JSONDecodeError:
-            result = res.text
+            res = requests.post(self.base_url + 'api/pets', headers=headers, data=data)
+            status = res.status_code
+            try:
+                result = res.json()
+            except json.decoder.JSONDecodeError:
+                result = res.text
+        except InvalidHeader or UnboundLocalError:
+            status = 403
+            result = ""
+
         print(result)
         return status, result
 
@@ -102,4 +117,3 @@ class PetFriends:
         except json.decoder.JSONDecodeError:
             result = res.text
         return status, result
-
