@@ -41,7 +41,10 @@ class PetFriends:
         со списком наденных питомцев, совпадающих с фильтром. На данный момент фильтр может иметь
         либо пустое значение - получить список всех питомцев, либо 'my_pets' - получить список
         собственных питомцев"""
-        headers = {'auth_key': auth_key['key']}
+        try:
+            headers = {'auth_key': auth_key['key']}
+        except TypeError:
+            headers = {'auth_key': auth_key}
         filter = {'filter': filter}
         res = requests.get(self.base_url + 'api/pets', headers=headers, params=filter)
         status = res.status_code
@@ -87,7 +90,10 @@ class PetFriends:
         """Метод отправляет на сервер запрос на удаление питомца по указанному ID и возвращает
         статус запроса и результат в формате JSON с текстом уведомления о успешном удалении.
         На сегодняшний день тут есть баг - в result приходит пустая строка, но status при этом = 200"""
-        headers = {'auth_key': auth_key['key']}
+        try:
+            headers = {'auth_key': auth_key['key']}
+        except TypeError:
+            headers = {'auth_key': auth_key}
         res = requests.delete(self.base_url + 'api/pets/' + pet_id, headers=headers)
         status = res.status_code
         result = ""
@@ -101,8 +107,10 @@ class PetFriends:
                         animal_type: str, age: int) -> json:
         """Метод отправляет запрос на сервер о обновлении данных питомуа по указанному ID и
         возвращает статус запроса и result в формате JSON с обновлённыи данными питомца"""
-
-        headers = {'auth_key': auth_key['key']}
+        try:
+            headers = {'auth_key': auth_key['key']}
+        except TypeError:
+            headers = {'auth_key': auth_key}
         data = {
             'name': name,
             'age': age,

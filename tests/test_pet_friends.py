@@ -4,6 +4,7 @@ from settings import *
 import os
 
 pf = PetFriends()
+forbidden = "403 Forbidden"
 
 # GET api key
 def test_get_api_key_for_valid_user(email=valid_email, password=valid_password):
@@ -77,6 +78,7 @@ def test_get_api_key_for_empty_header(email="", password=""):
     assert not 'key' in result
 
 
+# GET pets list
 def test_get_all_pets_with_valid_key(filter=''):
     """ Проверяем что запрос всех питомцев возвращает не пустой список.
     Для этого сначала получаем api ключ и сохраняем в переменную auth_key. Далее используя этого ключ
@@ -88,6 +90,30 @@ def test_get_all_pets_with_valid_key(filter=''):
 
     assert status == 200
     assert len(result['pets']) > 0
+
+
+def test_get_all_pets_with_invalid_key(filter=''):
+    """
+       Test case for retrieving a list of pets using an invalid authentication key.
+
+       This test verifies that the API returns a 403 status code when an invalid
+       authentication key is provided. Additionally, it checks that the response
+       contains no pet data or an appropriate error message.
+       Args:
+           filter (str, optional): Filter parameter to specify which pets to retrieve.
+                                   Defaults to an empty string.
+       Assertions:
+           - The response status code is 403 (Forbidden).
+           - The response contains no pets or includes an error message indicating the failure.
+       """
+    auth_key = invalid_auth_key()
+    status, result = pf.get_list_of_pets(auth_key, filter)
+    assert status == 403
+    try:
+        assert len(result['pets']) == 0
+    except TypeError:
+        assert forbidden in result
+
 
 # POST a pet
 def test_add_new_pet_with_valid_data(name='Барбоскин', animal_type='двортерьер',
@@ -216,6 +242,7 @@ def test_add_new_pet_without_age(name='Барбоскин', animal_type='дво�
     except TypeError:
         assert type(result) != dict or json
 
+
 # DELETE
 def test_successful_delete_self_pet():
     """Проверяем возможность удаления питомца"""
@@ -240,6 +267,34 @@ def test_successful_delete_self_pet():
     assert status == 200
     assert pet_id not in my_pets.values()
 
+def test_delete_self_pet_with_invalid_autrh_key():
+    """
+    Test case for attempting to delete a pet using an invalid authentication key.
+
+    This test verifies that the API returns a 403 status code when trying to delete
+    a pet with an invalid authentication key. It ensures that the pet remains in
+    the user's list after the failed deletion attempt.
+
+    Assertions:
+        - The API returns a 403 status code.
+        - The response contains an indication of the authorization failure.
+        - The pet remains in the user's pet list.
+    """
+    _, auth_key = pf.get_api_key(valid_email, valid_password)
+    _, my_pets = pf.get_list_of_pets(auth_key, "my_pets")
+    if len(my_pets['pets']) == 0:
+        pf.add_new_pet(auth_key, "Суперкот", "кот", "3", "images/cat1.jpg")
+        _, my_pets = pf.get_list_of_pets(auth_key, "my_pets")
+
+    pet_id = my_pets['pets'][0]['id']
+    status, result = pf.delete_pet(invalid_auth_key(), pet_id)
+
+    _, my_pets = pf.get_list_of_pets(auth_key, "my_pets")
+    assert status == 403
+    assert forbidden in result
+    assert pet_id in my_pets['pets'][0].values()
+
+
 # PUT
 def test_successful_update_self_pet_info(name='Мурзик', animal_type='Котэ', age=5):
     """Проверяем возможность обновления информации о питомце"""
@@ -258,3 +313,30 @@ def test_successful_update_self_pet_info(name='Мурзик', animal_type='Ко�
     else:
         # если спиок питомцев пустой, то выкидываем исключение с текстом об отсутствии своих питомцев
         raise Exception("There is no my pets")
+
+def test_update_self_pet_info_with_invalid_auth_key(name='Мурзик', animal_type='Котэ', age=5):
+    def test_update_self_pet_info_with_invalid_auth_key(name='Мурзик', animal_type='Котэ', age=5):
+        """
+        Test case for updating pet information using an invalid authentication key.
+
+        This test verifies that the API returns a 403 status code when attempting to update
+        a pet's details with an invalid authentication key. It ensures that unauthorized
+        users cannot modify pet data.
+        Args:
+            name (str, optional): The new name of the pet. Defaults to 'Мурзик'.
+            animal_type (str, optional): The new type of the pet. Defaults to 'Котэ'.
+            age (int, optional): The new age of the pet. Defaults to 5.
+        Steps:
+
+        Assertions:
+            - The API returns a 403 status code.
+            - The response contains an indication of the authorization failure.
+        """
+    _, auth_key = pf.get_api_key(valid_email, valid_password)
+    _, my_pets = pf.get_list_of_pets(auth_key, "my_pets")
+
+    if len(my_pets['pets']) > 0:
+        status, result = pf.update_pet_info(invalid_auth_key(), my_pets['pets'][0]['id'], name, animal_type, age)
+
+        assert status == 403
+        assert forbidden in result
