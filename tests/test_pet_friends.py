@@ -130,7 +130,7 @@ def test_add_new_pet_without_name(auth_key, pet_photo):
     status, result = pf.add_new_pet(auth_key, "", "двортерьер", "4", pet_photo)
     assert status == 403
     try:
-        assert not result['name'] == name
+        assert not result['name'] == ""
     except TypeError:
         assert type(result) != dict or json
 
