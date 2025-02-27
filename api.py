@@ -1,9 +1,12 @@
 """Модуль 19"""
 import json
 
+import pytest
 import requests
+from requests import session
 from requests.exceptions import InvalidHeader
 from requests_toolbelt import MultipartEncoder
+from settings import *
 import secrets
 
 
@@ -13,11 +16,10 @@ class PetFriends:
     def __init__(self):
         self.base_url = "https://petfriends.skillfactory.ru/"
 
-
-
     def get_api_key(self, email: str, passwd: str) -> json:
         """Метод делает запрос к API сервера и возвращает статус запроса и результат в формате
         JSON с уникальным ключем пользователя, найденного по указанным email и паролем"""
+        print(f"1111111111111111111111111111111111111111111111111\n{__name__} -111111111111111111111111111111111111111111111111111111111")
         headers = {
             'email': email,
             'password': passwd,
